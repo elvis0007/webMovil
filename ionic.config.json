@@ -1,0 +1,7 @@
+{
+  "name": "finanzas-personales",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
