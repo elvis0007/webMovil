@@ -1,0 +1,64 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Nuevo Movimiento</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="saveMovement()">
+
+    <ion-item>
+      <ion-label position="floating">Tipo</ion-label>
+      <ion-select formControlName="type">
+        <ion-select-option value="income">Ingreso</ion-select-option>
+        <ion-select-option value="expense">Gasto</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Monto</ion-label>
+      <ion-input type="number" formControlName="amount" min="0.01" step="0.01"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Descripción</ion-label>
+      <ion-input formControlName="description"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Categoría</ion-label>
+      <ion-select formControlName="category">
+        <ion-select-option value="comida">Comida</ion-select-option>
+        <ion-select-option value="transporte">Transporte</ion-select-option>
+        <ion-select-option value="salud">Salud</ion-select-option>
+        <ion-select-option value="educación">Educación</ion-select-option>
+        <ion-select-option value="otros">Otros</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Fecha</ion-label>
+      <ion-datetime formControlName="date" presentation="date"></ion-datetime>
+    </ion-item>
+
+    <ion-button expand="full" type="submit" [disabled]="form.invalid">Guardar</ion-button>
+  </form>
+
+  <ion-list>
+    <ion-list-header>
+      Movimientos recientes
+    </ion-list-header>
+
+    <ion-item *ngFor="let t of transactions">
+      <ion-label>
+        <h3>{{ t.type === 'income' ? 'Ingreso' : 'Gasto' }} - {{ t.category }}</h3>
+        <p>{{ t.description }}</p>
+        <p>{{ t.amount | currency }} - {{ t.date | date:'shortDate' }}</p>
+      </ion-label>
+    <ion-button *ngIf="t.id" fill="clear" color="danger" (click)="confirmDelete(t.id!)">
+
+        <ion-icon slot="icon-only" name="trash"></ion-icon>
+      </ion-button>
+    </ion-item>
+  </ion-list>
+</ion-content>

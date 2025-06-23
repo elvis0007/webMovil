@@ -1,0 +1,52 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Resumen Financiero</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Balance Actual</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <h1>{{ (totalIncome - totalExpense) | currency:userCurrency }}</h1>
+      <ion-grid>
+        <ion-row>
+          <ion-col>
+            <h3>Ingresos</h3>
+            <p class="income">{{ totalIncome | currency:userCurrency }}</p>
+          </ion-col>
+          <ion-col>
+            <h3>Gastos</h3>
+            <p class="expense">{{ totalExpense | currency:userCurrency }}</p>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Resumen por Categorías</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <canvas #pieChart></canvas>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Historial Mensual</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <canvas #barChart></canvas>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button routerLink="/transactions/add">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

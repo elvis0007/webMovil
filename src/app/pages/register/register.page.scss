@@ -1,0 +1,19 @@
+ion-content {
+  --background: var(--ion-color-light);
+}
+
+form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+ion-note {
+  display: block;
+  margin-top: -10px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+ion-button[type="submit"] {
+  margin-top: 30px;
+}

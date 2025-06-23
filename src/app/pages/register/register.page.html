@@ -1,0 +1,64 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Crear Cuenta</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <!-- Nombre -->
+    <ion-item>
+      <ion-label position="floating">Nombre Completo</ion-label>
+      <ion-input formControlName="displayName" type="text"></ion-input>
+    </ion-item>
+    <ion-note *ngIf="registerForm.get('displayName')?.invalid && registerForm.get('displayName')?.touched" color="danger">
+      Nombre requerido
+    </ion-note>
+
+    <!-- Email -->
+    <ion-item>
+      <ion-label position="floating">Correo Electrónico</ion-label>
+      <ion-input formControlName="email" type="email"></ion-input>
+    </ion-item>
+    <ion-note *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" color="danger">
+      {{ registerForm.get('email')?.errors?.['required'] ? 'Email requerido' : 'Email inválido' }}
+    </ion-note>
+
+    <!-- Contraseña -->
+    <ion-item>
+      <ion-label position="floating">Contraseña</ion-label>
+      <ion-input formControlName="password" type="password"></ion-input>
+    </ion-item>
+    <ion-note *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" color="danger">
+      Mínimo 6 caracteres
+    </ion-note>
+
+    <!-- Confirmar Contraseña -->
+    <ion-item>
+      <ion-label position="floating">Confirmar Contraseña</ion-label>
+      <ion-input formControlName="confirmPassword" type="password"></ion-input>
+    </ion-item>
+    <ion-note *ngIf="registerForm.hasError('mismatch')" color="danger">
+      Las contraseñas no coinciden
+    </ion-note>
+
+    <!-- Botón de Registro -->
+    <ion-button 
+      expand="block" 
+      type="submit" 
+      [disabled]="registerForm.invalid" 
+      class="ion-margin-top">
+      <ion-spinner *ngIf="loading"></ion-spinner>
+      <span *ngIf="!loading">Registrarse</span>
+    </ion-button>
+
+    <!-- Enlace a Login -->
+    <ion-button 
+      expand="block" 
+      fill="clear" 
+      routerLink="/login" 
+      class="ion-margin-top">
+      ¿Ya tienes cuenta? Inicia Sesión
+    </ion-button>
+  </form>
+</ion-content>
