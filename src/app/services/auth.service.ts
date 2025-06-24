@@ -5,17 +5,19 @@ import { Router } from '@angular/router';
 import { Storage } from '@ionic/storage-angular';
 import { FirebaseError } from 'firebase/app';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
+import { AlertController } from '@ionic/angular';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  alertCtrl: any;
+
   constructor(
     private afAuth: AngularFireAuth,
     private router: Router,
     private storage: Storage,
-    private firestore: AngularFirestore // Asegúrate de importar AngularFirestore si lo necesitas
+    private firestore: AngularFirestore,
+    private alertCtrl: AlertController
   ) {
     this.initStorage();
   }
@@ -25,59 +27,56 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<User> {
-  try {
-    const { user } = await this.afAuth.signInWithEmailAndPassword(email, password);
-    if (!user) {
-      throw new Error('User not found after sign in');
+    try {
+      const { user } = await this.afAuth.signInWithEmailAndPassword(email, password);
+      if (!user) throw new Error('User not found after sign in');
+
+      const mappedUser: User = {
+        uid: user.uid,
+        email: user.email ?? '',
+        displayName: user.displayName ?? '',
+        photoURL: user.photoURL ?? ''
+      };
+
+      await this.storage.set('user', mappedUser);
+      return mappedUser;
+
+    } catch (error) {
+      throw error;
     }
-    const mappedUser: User = {
-      uid: user.uid,
-      email: user.email ?? '',
-      displayName: user.displayName ?? '',
-      photoURL: user.photoURL ?? ''
-    };
-    await this.storage.set('user', mappedUser);  // Guardar solo datos planos
-    return mappedUser;
-  } catch (error) {
-    throw error;
   }
-}
 
-
-
- async logout(): Promise<void> {    try {
+  async logout(): Promise<void> {
+    try {
       await this.afAuth.signOut();
       await this.storage.remove('user');
-      this.router.navigate(['/login']);
+      await this.router.navigate(['/login']);
     } catch (error) {
-        console.error(error);
-      }
+      console.error('Error en AuthService.logout:', error);
+      throw error;
     }
+  }
 
   async register(userData: { email: string; password: string; displayName?: string }): Promise<User | null> {
     try {
-      // 1. Crear usuario en Firebase Auth
-      const { user } = await this.afAuth.createUserWithEmailAndPassword(
-        userData.email,
-        userData.password
-      );
-
+      const { user } = await this.afAuth.createUserWithEmailAndPassword(userData.email, userData.password);
       if (!user) throw new Error('No se pudo crear el usuario');
 
-      // 2. Actualizar perfil con nombre
       if (userData.displayName) {
         await user.updateProfile({ displayName: userData.displayName });
       }
 
-      // 3. Crear documento adicional en Firestore (opcional)
-      // await this.createUserProfile(user.uid, userData);
+      await this.createUserProfile(user.uid, userData);
 
-      // 4. Retornar datos del usuario
-      return {
+      const mappedUser: User = {
         uid: user.uid,
-        email: user.email!,
-        displayName: user.displayName || ''
+        email: user.email ?? '',
+        displayName: user.displayName ?? '',
+        photoURL: user.photoURL ?? ''
       };
+
+      await this.storage.set('user', mappedUser);
+      return mappedUser;
 
     } catch (error) {
       await this.handleAuthError(error);
@@ -109,17 +108,6 @@ export class AuthService {
     });
 
     await alert.present();
-      await this.storage.remove('user');
-      this.router.navigate(['/login']);
-    try {
-      await this.afAuth.signOut();
-      // Espera a que el storage esté listo antes de remover la clave
-      await this.storage.remove('user');
-      this.router.navigate(['/login']);
-    } catch (error) {
-      console.error('Error en AuthService.logout:', error);
-      throw error;
-    }
   }
 
   getCurrentUser(): Promise<User> {
@@ -139,14 +127,16 @@ export class AuthService {
       });
     });
   }
-  private async createUserProfile(uid: string, userData: any): Promise<void> {
-  const userProfile = {
-    uid,
-    email: userData.email,
-    displayName: userData.displayName || '',
-    createdAt: new Date(),
-    lastLogin: new Date()
-  };
 
-  await this.firestore.doc(`users/${uid}`).set(userProfile);
-}}
+  private async createUserProfile(uid: string, userData: any): Promise<void> {
+    const userProfile = {
+      uid,
+      email: userData.email,
+      displayName: userData.displayName || '',
+      createdAt: new Date(),
+      lastLogin: new Date()
+    };
+
+    await this.firestore.doc(`users/${uid}`).set(userProfile);
+  }
+}

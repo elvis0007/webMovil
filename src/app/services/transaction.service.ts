@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { AuthService } from './auth.service';
-import { Observable, from } from 'rxjs';
-import { switchMap, map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import { Transaction } from '../models/transaction.model';
 
 @Injectable({
@@ -15,49 +14,49 @@ export class TransactionService {
     private authService: AuthService
   ) {}
 
-  // Cambiado a 'movements'
- getTransactions(): Observable<Transaction[]> {
-  return new Observable(observer => {
-    this.authService.getCurrentUser()
-      .then(user => {
-        if (!user) {
-          observer.error('Usuario no autenticado');
-          return;
-        }
-        this.afs.collection<Transaction>('movements', ref =>
-          ref.where('userId', '==', user.uid)
-            .orderBy('date', 'desc')
-        ).snapshotChanges().subscribe(actions => {
-          const transactions = actions.map(a => {
-            const data = a.payload.doc.data() as Transaction;
-            const id = a.payload.doc.id;
-            return { id, ...data };
-          });
-          observer.next(transactions);
-        }, err => observer.error(err));
-      })
-      .catch(err => observer.error(err));
-  });
-}
+  // Obtener transacciones del usuario autenticado
+  getTransactions(): Observable<Transaction[]> {
+    return new Observable(observer => {
+      this.authService.getCurrentUser()
+        .then(user => {
+          if (!user) {
+            observer.error('Usuario no autenticado');
+            return;
+          }
 
-
-
-  async addTransaction(transaction: Omit<Transaction, 'id'>): Promise<void> {
-  const user = await this.authService.getCurrentUser();
-  if (!user) {
-    throw new Error('Usuario no autenticado');
+          this.afs.collection<Transaction>('movements', ref =>
+            ref.where('userId', '==', user.uid)
+               .orderBy('date', 'desc')
+          ).snapshotChanges().subscribe(actions => {
+            const transactions = actions.map(a => {
+              const data = a.payload.doc.data() as Transaction;
+              const id = a.payload.doc.id;
+              return { id, ...data };
+            });
+            observer.next(transactions);
+          }, err => observer.error(err));
+        })
+        .catch(err => observer.error(err));
+    });
   }
 
-  const transactionWithUser = {
-    ...transaction,
-    userId: user.uid,
-    date: transaction.date || new Date().toISOString()
-  };
+  // Agregar nueva transacción
+  async addTransaction(transaction: Omit<Transaction, 'id'>): Promise<void> {
+    const user = await this.authService.getCurrentUser();
+    if (!user) {
+      throw new Error('Usuario no autenticado');
+    }
 
-  await this.afs.collection('movements').add(transactionWithUser);
-}
+    const transactionWithUser = {
+      ...transaction,
+      userId: user.uid,
+      date: transaction.date || new Date().toISOString()
+    };
 
+    await this.afs.collection('movements').add(transactionWithUser);
+  }
 
+  // Eliminar transacción por ID
   deleteTransaction(id: string): Promise<void> {
     return this.afs.doc(`movements/${id}`).delete();
   }

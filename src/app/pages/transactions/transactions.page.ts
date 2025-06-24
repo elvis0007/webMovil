@@ -4,6 +4,7 @@ import { TransactionService } from '../../services/transaction.service';
 import { Subscription } from 'rxjs';
 import { ToastController, AlertController } from '@ionic/angular';
 import { Transaction } from '../../models/transaction.model';
+import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-transactions',
@@ -20,7 +21,8 @@ export class TransactionsPage implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private transactionService: TransactionService,
     private toastCtrl: ToastController,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private authService: AuthService
   ) {
     this.form = this.fb.group({
       type: ['expense', Validators.required], // 'expense' or 'income'
@@ -60,30 +62,43 @@ export class TransactionsPage implements OnInit, OnDestroy {
       return;
     }
 
-    const userId = 'CURRENT_USER_ID'; // Replace with actual user ID retrieval logic
-    const transaction: Omit<Transaction, 'id'> = {
-      type: this.form.value.type,
-      amount: this.form.value.amount,
-      description: this.form.value.description,
-      category: this.form.value.category,
-      date: this.form.value.date,
-      userId: userId
-    };
-
-
     try {
+      const user = await this.authService.getCurrentUser(); // 🔑 Obtener el usuario autenticado
+      if (!user) {
+        const toast = await this.toastCtrl.create({
+          message: 'Usuario no autenticado',
+          duration: 2000,
+          color: 'danger'
+        });
+        toast.present();
+        return;
+      }
+
+      const transaction: Omit<Transaction, 'id'> = {
+        type: this.form.value.type,
+        amount: this.form.value.amount,
+        description: this.form.value.description,
+        category: this.form.value.category,
+        date: this.form.value.date,
+        userId: user.uid
+      };
+
       await this.transactionService.addTransaction(transaction);
+
       const toast = await this.toastCtrl.create({
         message: 'Movimiento guardado correctamente',
         duration: 2000,
         color: 'success'
       });
       toast.present();
+
       this.form.reset({
         type: 'expense',
         date: new Date().toISOString()
       });
+
     } catch (error) {
+      console.error('Error al guardar el movimiento:', error);
       const toast = await this.toastCtrl.create({
         message: 'Error al guardar el movimiento',
         duration: 2000,
@@ -91,18 +106,6 @@ export class TransactionsPage implements OnInit, OnDestroy {
       });
       toast.present();
     }
-  }
-
-  async confirmDelete(id: string) {
-    const alert = await this.alertCtrl.create({
-      header: 'Confirmar eliminación',
-      message: '¿Seguro que deseas eliminar esta transacción?',
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        { text: 'Eliminar', handler: () => this.deleteTransaction(id) }
-      ]
-    });
-    await alert.present();
   }
 
   async deleteTransaction(id: string) {
@@ -122,5 +125,17 @@ export class TransactionsPage implements OnInit, OnDestroy {
       });
       toast.present();
     }
+  }
+
+  async confirmDelete(id: string) {
+    const alert = await this.alertCtrl.create({
+      header: 'Confirmar eliminación',
+      message: '¿Seguro que deseas eliminar esta transacción?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Eliminar', handler: () => this.deleteTransaction(id) }
+      ]
+    });
+    await alert.present();
   }
 }
